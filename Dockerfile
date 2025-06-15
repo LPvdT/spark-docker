@@ -1,36 +1,28 @@
 # Build stage: spark-base
-FROM python:3.12.9-bookworm AS spark-base
+FROM python:3.12-bookworm AS spark-base
 
+# Install dependencies
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-    sudo \
-    curl \
-    vim \
-    unzip \
-    rsync \
-    openjdk-11-jdk \
-    build-essential \
-    software-properties-common \
-    ssh && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
+    sudo curl unzip rsync default-jre build-essential \
+    software-properties-common ssh && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # ENV variables
-ENV SPARK_VERSION=4.0.0
+ENV SPARK_VERSION=4.0.0 \
+    SPARK_HOME="/opt/spark" \
+    HADOOP_HOME="/opt/hadoop" \
+    SPARK_MASTER_PORT=7077 \
+    SPARK_MASTER_HOST=spark-master \
+    SPARK_MASTER="spark://spark-master:7077" \
+    PYTHONPATH="/opt/spark/python/" \
+    PYSPARK_PYTHON=python3 \
+    IJAVA_CLASSPATH="/opt/spark/jars/*" \
+    PATH="$PATH:/opt/spark/bin:/opt/spark/sbin"\
+    # Add iceberg spark runtime jar to IJava classpath
+    IJAVA_CLASSPATH="/opt/spark/jars/*"
 
-ENV SPARK_HOME="/opt/spark"
-ENV HADOOP_HOME="/opt/hadoop"
-
-ENV SPARK_MASTER_PORT=7077
-ENV SPARK_MASTER_HOST=spark-master
-ENV SPARK_MASTER="spark://$SPARK_MASTER_HOST:$SPARK_MASTER_PORT"
-
-ENV PYTHONPATH=$SPARK_HOME/python/:$PYTHONPATH
-ENV PYSPARK_PYTHON=python3
-
-# Add iceberg spark runtime jar to IJava classpath
-ENV IJAVA_CLASSPATH=/opt/spark/jars/*
-
+# Create directories
 RUN mkdir -p ${HADOOP_HOME} && mkdir -p ${SPARK_HOME}
 WORKDIR ${SPARK_HOME}
 
@@ -55,7 +47,7 @@ FROM spark-base AS pyspark
 
 # Install python deps
 COPY requirements.txt .
-RUN pip3 install -r requirements.txt
+RUN pip3 install --no-cache-dir -r requirements.txt
 
 
 # Build stage: pyspark-runner
@@ -76,10 +68,9 @@ RUN mkdir -p /opt/spark/jars && \
     -Lo /opt/spark/jars/delta-storage-4.0.0.jar && \
     # Download hudi jars
     curl https://repo1.maven.org/maven2/org/apache/hudi/hudi-spark3-bundle_2.12/1.0.2/hudi-spark3-bundle_2.12-1.0.2.jar \
-    -Lo /opt/spark/jars/hudi-spark3-bundle_2.12-1.0.2.jar
-
-# Download hudi jars
-RUN curl https://repo1.maven.org/maven2/org/apache/hudi/hudi-spark3-bundle_2.12/1.0.2/hudi-spark3-bundle_2.12-1.0.2.jar \
+    -Lo /opt/spark/jars/hudi-spark3-bundle_2.12-1.0.2.jar && \
+    # Download hudi jars
+    curl https://repo1.maven.org/maven2/org/apache/hudi/hudi-spark3-bundle_2.12/1.0.2/hudi-spark3-bundle_2.12-1.0.2.jar \
     -Lo /opt/spark/jars/hudi-spark3-bundle_2.12-1.0.2.jar
 
 COPY entrypoint.sh .
