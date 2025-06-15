@@ -61,9 +61,12 @@ RUN pip3 install -r requirements.txt
 # Build stage: pyspark-runner
 FROM pyspark AS pyspark-runner
 
-# Download iceberg spark runtime
+# Download iceberg jars
 RUN curl https://repo1.maven.org/maven2/org/apache/iceberg/iceberg-spark-runtime-3.4_2.12/1.9.1/iceberg-spark-runtime-3.4_2.12-1.9.1.jar \
     -Lo /opt/spark/jars/iceberg-spark-runtime-3.4_2.12-1.9.1.jar
+
+RUN curl https://repo1.maven.org/maven2/org/apache/iceberg/iceberg-spark-extensions-3.4_2.12/1.9.1/iceberg-spark-extensions-3.4_2.12-1.9.1.jar \
+    -Lo /opt/spark/jars/iceberg-spark-extensions-3.4_2.12-1.9.1.jar
 
 # Download delta jars
 RUN curl https://repo1.maven.org/maven2/io/delta/delta-core_2.12/2.4.0/delta-core_2.12-2.4.0.jar \
