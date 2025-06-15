@@ -1,20 +1,24 @@
-from pyspark.sql import SparkSession
-from pyspark.sql.functions import expr
-from delta.tables import DeltaTable
 import shutil
 
+from delta.tables import DeltaTable
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import expr
 
 path = "/tmp/delta-change-data-feed/student"
 otherPath = "/tmp/delta-change-data-feed/student_source"
 
 # Enable SQL commands and Update/Delete/Merge for the current spark session.
 # we need to set the following configs
-spark = SparkSession.builder \
-    .appName("Change Data Feed") \
-    .master("local[*]") \
-    .config("spark.sql.extensions", "io.delta.sql.DeltaSparkSessionExtension") \
-    .config("spark.sql.catalog.spark_catalog", "org.apache.spark.sql.delta.catalog.DeltaCatalog") \
+spark = (
+    SparkSession.builder.appName("Change Data Feed")
+    .master("local[*]")
+    .config("spark.sql.extensions", "io.delta.sql.DeltaSparkSessionExtension")
+    .config(
+        "spark.sql.catalog.spark_catalog",
+        "org.apache.spark.sql.delta.catalog.DeltaCatalog",
+    )
     .getOrCreate()
+)
 
 
 def cleanup():
@@ -25,41 +29,45 @@ def cleanup():
 
 
 def read_cdc_by_table_name(starting_version):
-    return spark.read.format("delta") \
-        .option("readChangeFeed", "true") \
-        .option("startingVersion", str(starting_version)) \
-        .table("student") \
+    return (
+        spark.read.format("delta")
+        .option("readChangeFeed", "true")
+        .option("startingVersion", str(starting_version))
+        .table("student")
         .orderBy("_change_type", "id")
+    )
 
 
 def stream_cdc_by_table_name(starting_version):
-    return spark.readStream.format("delta") \
-        .option("readChangeFeed", "true") \
-        .option("startingVersion", str(starting_version)) \
-        .table("student") \
-        .writeStream \
-        .format("console") \
-        .option("numRows", 1000) \
+    return (
+        spark.readStream.format("delta")
+        .option("readChangeFeed", "true")
+        .option("startingVersion", str(starting_version))
+        .table("student")
+        .writeStream.format("console")
+        .option("numRows", 1000)
         .start()
+    )
 
 
 cleanup()
 
 try:
     # =============== Create student table ===============
-    spark.sql('''CREATE TABLE student (id INT, name STRING, age INT)
+    spark.sql(
+        """CREATE TABLE student (id INT, name STRING, age INT)
                 USING DELTA
                 PARTITIONED BY (age)
                 TBLPROPERTIES (delta.enableChangeDataFeed = true)
                 LOCATION '{0}'
-            '''.format(path))
+            """.format(path)
+    )
 
-    spark.range(0, 10) \
-        .selectExpr(
-            "CAST(id as INT) as id",
-            "CAST(id as STRING) as name",
-            "CAST(id % 4 + 18 as INT) as age") \
-        .write.format("delta").mode("append").save(path)  # v1
+    spark.range(0, 10).selectExpr(
+        "CAST(id as INT) as id",
+        "CAST(id as STRING) as name",
+        "CAST(id % 4 + 18 as INT) as age",
+    ).write.format("delta").mode("append").save(path)  # v1
 
     # =============== Show table data + changes ===============
 
@@ -91,27 +99,26 @@ try:
 
     # =============== Create source table for MERGE ===============
 
-    spark.sql('''CREATE TABLE student_source (id INT, name STRING, age INT)
+    spark.sql(
+        """CREATE TABLE student_source (id INT, name STRING, age INT)
                 USING DELTA
                 LOCATION '{0}'
-            '''.format(otherPath))
-    spark.range(0, 3) \
-        .selectExpr(
-            "CAST(id as INT) as id",
-            "CAST(id as STRING) as name",
-            "CAST(id % 4 + 18 as INT) as age") \
-        .write.format("delta").mode("append").saveAsTable("student_source")
+            """.format(otherPath)
+    )
+    spark.range(0, 3).selectExpr(
+        "CAST(id as INT) as id",
+        "CAST(id as STRING) as name",
+        "CAST(id % 4 + 18 as INT) as age",
+    ).write.format("delta").mode("append").saveAsTable("student_source")
     source = spark.sql("SELECT * FROM student_source")
 
     # =============== Perform MERGE ===============
 
-    table.alias("target") \
-        .merge(
-            source.alias("source"),
-            "target.id = source.id")\
-        .whenMatchedUpdate(set={"id": "source.id", "age": "source.age + 10"}) \
-        .whenNotMatchedInsertAll() \
-        .execute() # v5
+    table.alias("target").merge(
+        source.alias("source"), "target.id = source.id"
+    ).whenMatchedUpdate(
+        set={"id": "source.id", "age": "source.age + 10"}
+    ).whenNotMatchedInsertAll().execute()  # v5
     print("(v5) Merged with a source table")
     read_cdc_by_table_name(5).show()
 
