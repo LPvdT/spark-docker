@@ -10,6 +10,7 @@ RUN apt-get update && \
 
 # ENV variables
 ENV SPARK_VERSION=3.5.6 \
+    SCALA_VERSION=2.12 \
     SPARK_HOME="/opt/spark" \
     HADOOP_HOME="/opt/hadoop" \
     SPARK_MASTER_PORT=7077 \
@@ -52,20 +53,20 @@ FROM pyspark AS pyspark-runner
 
 RUN mkdir -p /opt/spark/jars && \
     # Download iceberg jars
-    curl https://repo1.maven.org/maven2/org/apache/iceberg/iceberg-spark-runtime-3.4_2.12/1.9.1/iceberg-spark-runtime-3.4_2.12-1.9.1.jar \
-    -Lo /opt/spark/jars/iceberg-spark-runtime-3.4_2.12-1.9.1.jar && \
-    curl https://repo1.maven.org/maven2/org/apache/iceberg/iceberg-spark-extensions-3.4_2.12/1.9.1/iceberg-spark-extensions-3.4_2.12-1.9.1.jar \
-    -Lo /opt/spark/jars/iceberg-spark-extensions-3.4_2.12-1.9.1.jar && \
+    curl https://repo1.maven.org/maven2/org/apache/iceberg/iceberg-spark-runtime-3.4_${SCALA_VERSION}/1.9.1/iceberg-spark-runtime-3.4_${SCALA_VERSION}-1.9.1.jar \
+    -Lo /opt/spark/jars/iceberg-spark-runtime-3.4_${SCALA_VERSION}-1.9.1.jar && \
+    curl https://repo1.maven.org/maven2/org/apache/iceberg/iceberg-spark-extensions-3.4_${SCALA_VERSION}/1.9.1/iceberg-spark-extensions-3.4_${SCALA_VERSION}-1.9.1.jar \
+    -Lo /opt/spark/jars/iceberg-spark-extensions-3.4_${SCALA_VERSION}-1.9.1.jar && \
     # Download delta jars
-    curl https://repo1.maven.org/maven2/io/delta/delta-core_2.12/2.4.0/delta-core_2.12-2.4.0.jar \
-    -Lo /opt/spark/jars/delta-core_2.12-2.4.0.jar && \
-    curl https://repo1.maven.org/maven2/io/delta/delta-spark_2.12/${SPARK_VERSION}/delta-spark_2.12-${SPARK_VERSION}.jar \
-    -Lo /opt/spark/jars/delta-spark_2.12-${SPARK_VERSION}.jar && \
+    curl https://repo1.maven.org/maven2/io/delta/delta-core_${SCALA_VERSION}/2.4.0/delta-core_${SCALA_VERSION}-2.4.0.jar \
+    -Lo /opt/spark/jars/delta-core_${SCALA_VERSION}-2.4.0.jar && \
+    curl https://repo1.maven.org/maven2/io/delta/delta-spark_${SCALA_VERSION}/${SPARK_VERSION}/delta-spark_${SCALA_VERSION}-${SPARK_VERSION}.jar \
+    -Lo /opt/spark/jars/delta-spark_${SCALA_VERSION}-${SPARK_VERSION}.jar && \
     curl https://repo1.maven.org/maven2/io/delta/delta-storage/${SPARK_VERSION}/delta-storage-${SPARK_VERSION}.jar \
     -Lo /opt/spark/jars/delta-storage-${SPARK_VERSION}.jar && \
     # Download hudi jars
-    curl https://repo1.maven.org/maven2/org/apache/hudi/hudi-spark3-bundle_2.12/1.0.2/hudi-spark3-bundle_2.12-1.0.2.jar \
-    -Lo /opt/spark/jars/hudi-spark3-bundle_2.12-1.0.2.jar
+    curl https://repo1.maven.org/maven2/org/apache/hudi/hudi-spark3-bundle_${SCALA_VERSION}/1.0.2/hudi-spark3-bundle_${SCALA_VERSION}-1.0.2.jar \
+    -Lo /opt/spark/jars/hudi-spark3-bundle_${SCALA_VERSION}-1.0.2.jar
 
 COPY entrypoint.sh .
 RUN chmod u+x /opt/spark/entrypoint.sh
