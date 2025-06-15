@@ -61,20 +61,22 @@ RUN pip3 install -r requirements.txt
 # Build stage: pyspark-runner
 FROM pyspark AS pyspark-runner
 
-# Download iceberg jars
-RUN curl https://repo1.maven.org/maven2/org/apache/iceberg/iceberg-spark-runtime-3.4_2.12/1.9.1/iceberg-spark-runtime-3.4_2.12-1.9.1.jar \
-    -Lo /opt/spark/jars/iceberg-spark-runtime-3.4_2.12-1.9.1.jar
-
-RUN curl https://repo1.maven.org/maven2/org/apache/iceberg/iceberg-spark-extensions-3.4_2.12/1.9.1/iceberg-spark-extensions-3.4_2.12-1.9.1.jar \
-    -Lo /opt/spark/jars/iceberg-spark-extensions-3.4_2.12-1.9.1.jar
-
-# Download delta jars
-RUN curl https://repo1.maven.org/maven2/io/delta/delta-core_2.12/2.4.0/delta-core_2.12-2.4.0.jar \
-    -Lo /opt/spark/jars/delta-core_2.12-2.4.0.jar
-RUN curl https://repo1.maven.org/maven2/io/delta/delta-spark_2.12/4.0.0/delta-spark_2.12-4.0.0.jar \
-    -Lo /opt/spark/jars/delta-spark_2.12-4.0.0.jar
-RUN curl https://repo1.maven.org/maven2/io/delta/delta-storage/4.0.0/delta-storage-4.0.0.jar \
-    -Lo /opt/spark/jars/delta-storage-4.0.0.jar
+RUN mkdir -p /opt/spark/jars && \
+    # Download iceberg jars
+    curl https://repo1.maven.org/maven2/org/apache/iceberg/iceberg-spark-runtime-3.4_2.12/1.9.1/iceberg-spark-runtime-3.4_2.12-1.9.1.jar \
+    -Lo /opt/spark/jars/iceberg-spark-runtime-3.4_2.12-1.9.1.jar && \
+    curl https://repo1.maven.org/maven2/org/apache/iceberg/iceberg-spark-extensions-3.4_2.12/1.9.1/iceberg-spark-extensions-3.4_2.12-1.9.1.jar \
+    -Lo /opt/spark/jars/iceberg-spark-extensions-3.4_2.12-1.9.1.jar && \
+    # Download delta jars
+    curl https://repo1.maven.org/maven2/io/delta/delta-core_2.12/2.4.0/delta-core_2.12-2.4.0.jar \
+    -Lo /opt/spark/jars/delta-core_2.12-2.4.0.jar && \
+    curl https://repo1.maven.org/maven2/io/delta/delta-spark_2.12/4.0.0/delta-spark_2.12-4.0.0.jar \
+    -Lo /opt/spark/jars/delta-spark_2.12-4.0.0.jar && \
+    curl https://repo1.maven.org/maven2/io/delta/delta-storage/4.0.0/delta-storage-4.0.0.jar \
+    -Lo /opt/spark/jars/delta-storage-4.0.0.jar && \
+    # Download hudi jars
+    curl https://repo1.maven.org/maven2/org/apache/hudi/hudi-spark3-bundle_2.12/1.0.2/hudi-spark3-bundle_2.12-1.0.2.jar \
+    -Lo /opt/spark/jars/hudi-spark3-bundle_2.12-1.0.2.jar
 
 # Download hudi jars
 RUN curl https://repo1.maven.org/maven2/org/apache/hudi/hudi-spark3-bundle_2.12/1.0.2/hudi-spark3-bundle_2.12-1.0.2.jar \
