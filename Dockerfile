@@ -8,7 +8,7 @@ RUN apt-get update && \
     vim \
     unzip \
     rsync \
-    openjdk-11-jdk \
+    default-jre \
     build-essential \
     software-properties-common \
     ssh && \
