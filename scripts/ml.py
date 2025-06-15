@@ -1,27 +1,29 @@
-from pyspark.sql import SparkSession
-from pyspark.sql.functions import date_format, col
-from pyspark.ml.feature import StringIndexer, OneHotEncoder, VectorAssembler
 from pyspark.ml import Pipeline
 from pyspark.ml.clustering import KMeans
 from pyspark.ml.evaluation import ClusteringEvaluator
+from pyspark.ml.feature import OneHotEncoder, StringIndexer, VectorAssembler
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import col, date_format
 
 # Initialize spark session
 spark = (
-    SparkSession.
-    builder.
-    appName("ml_demo").
-    config("spark.cores.max", "4").
-    config("spark.sql.shuffle.partitions", "5").
-    getOrCreate()
+    SparkSession.builder.appName("ml_demo")
+    .config("spark.cores.max", "4")
+    .config("spark.sql.shuffle.partitions", "5")
+    .getOrCreate()
 )
 
 # Loading the data
-df = spark.read.options(header=True, inferSchema=True).csv('./data/retail-data/by-day')
+df = spark.read.options(header=True, inferSchema=True).csv("./data/retail-data/by-day")
 df.createOrReplaceTempView("retail_data")
 df.show(5)
 
 # Preprocessing
-pdf = df.na.fill(0).withColumn("day_of_week", date_format(col("InvoiceDate"), "EEEE")).coalesce(5)
+pdf = (
+    df.na.fill(0)
+    .withColumn("day_of_week", date_format(col("InvoiceDate"), "EEEE"))
+    .coalesce(5)
+)
 
 # Split the data
 train_df = pdf.where("InvoiceDate < '2011-07-01'")
@@ -29,8 +31,14 @@ test_df = pdf.where("InvoiceDate >= '2011-07-01'")
 
 # ML Pipeline
 indexer = StringIndexer().setInputCol("day_of_week").setOutputCol("day_of_week_index")
-encoder = OneHotEncoder().setInputCol("day_of_week_index").setOutputCol("day_of_week_encoded")
-vectorAssembler = VectorAssembler().setInputCols(["UnitPrice", "Quantity", "day_of_week_encoded"]).setOutputCol("features")
+encoder = (
+    OneHotEncoder().setInputCol("day_of_week_index").setOutputCol("day_of_week_encoded")
+)
+vectorAssembler = (
+    VectorAssembler()
+    .setInputCols(["UnitPrice", "Quantity", "day_of_week_encoded"])
+    .setOutputCol("features")
+)
 
 tf_pipeline = Pipeline().setStages([indexer, encoder, vectorAssembler])
 
