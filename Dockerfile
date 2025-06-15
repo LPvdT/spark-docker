@@ -3,15 +3,8 @@ FROM python:3.12.9-bookworm AS spark-base
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-    sudo \
-    curl \
-    vim \
-    unzip \
-    rsync \
-    default-jre \
-    build-essential \
-    software-properties-common \
-    ssh && \
+    sudo curl unzip rsync default-jre build-essential \
+    software-properties-common ssh && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
@@ -53,10 +46,8 @@ COPY conf/spark-defaults.conf "$SPARK_HOME/conf/"
 # Build stage: pyspark
 FROM spark-base AS pyspark
 
-# Install python deps
 COPY requirements.txt .
-RUN pip3 install -r requirements.txt
-
+RUN pip3 install --no-cache-dir -r requirements.txt
 
 # Build stage: pyspark-runner
 FROM pyspark AS pyspark-runner
@@ -99,7 +90,7 @@ RUN chmod u+x /opt/spark/entrypoint.sh
 
 
 ENTRYPOINT ["./entrypoint.sh"]
-CMD [ "bash" ]
+CMD ["bash"]
 
 # Now go to interactive shell mode
 # -$ docker exec -it spark-master /bin/bash
