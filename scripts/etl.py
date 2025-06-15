@@ -2,12 +2,10 @@ from pyspark.sql import SparkSession
 
 # Initialize spark session
 spark = (
-    SparkSession.
-    builder.
-    appName("etl_demo").
-    config("spark.cores.max", "4").
-    config("spark.sql.shuffle.partitions", "5").
-    getOrCreate()
+    SparkSession.builder.appName("etl_demo")
+    .config("spark.cores.max", "4")
+    .config("spark.sql.shuffle.partitions", "5")
+    .getOrCreate()
 )
 
 SOURCE_PATH = "./data/yellow_trip_data"
