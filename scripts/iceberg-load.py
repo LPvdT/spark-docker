@@ -33,7 +33,7 @@ DEST_PATH = "./data/output/count_by_vendor.parquet"
 df = spark.read.options(inferSchema=True).parquet(SOURCE_PATH)
 df.printSchema()
 
-spark.sql(f"CREATE DATABASE IF NOT EXISTS db")
+spark.sql("CREATE DATABASE IF NOT EXISTS db")
 df.writeTo("db.yellow_trip_data").createOrReplace()
 
 spark.sql("DESCRIBE TABLE db.yellow_trip_data").show(truncate=False)

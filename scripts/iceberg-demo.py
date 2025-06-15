@@ -43,7 +43,7 @@ data = [
 df = spark.createDataFrame(data, schema=schema)
 
 # Create database
-spark.sql(f"CREATE DATABASE IF NOT EXISTS db")
+spark.sql("CREATE DATABASE IF NOT EXISTS db")
 
 # Write and read Iceberg table
 table_name = "db.persons"
